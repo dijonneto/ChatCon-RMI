@@ -9,12 +9,16 @@ import Security.AES;
 import Security.RSA;
 import Shared.Constants;
 import Shared.IChat;
+import Shared.Message;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
+import java.util.Arrays;
 import java.util.Base64;
-import java.util.Scanner;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -27,76 +31,114 @@ public class RMIClient {
     private AES encrypter;
     private KeyPair keyPair;
     private SecretKey keySymmetric;
+    private IChat stub;
+    private int cont = 0;
+    private String username;
+    private String pairName = "";
+    private int clientID = -1;
+    private int idConversation;
 
-    RMIClient() {
+    public RMIClient(String username) {
         try {
-            IChat stub = (IChat) Naming.lookup("rmi://127.0.0.1:1099/Chat");
-            //System.out.println("Resposta: " + stub.receiveMessage());
-            //final ServidorChat chat = (ServidorChat) Naming.lookup("rmi://192.168.102.11:1098/ServidorChat");
-
+            stub = (IChat) Naming.lookup("rmi://127.0.0.1:1099/Chat");
+            this.username = username;
             keyPair = RSA.generateKey();
-
-            byte[] encryptedKey = stub.getKeySymmetric(keyPair.getPublic());
-            keySymmetric = getSecretKey(encryptedKey, keyPair.getPrivate());
-            encrypter = new AES(keySymmetric);
-
-            Scanner scanner = new Scanner(System.in);
-            System.out.println("Digite o nome do usuário:");
-            String username = scanner.nextLine();
-            int clientID = stub.identifyUser(username);
-
-            String msg = scanner.nextLine();
-            while (!msg.equals("fim")) {
-                byte[] encMsg = encrypter.encrypt(msg);
-                stub.sendMessage(encMsg);//clientID + Constants.DELIMITER + msg);
-                // System.out.println(chat.lerMensagem().get(cont));
-                msg = scanner.nextLine();
-            }
-
-            Thread thread = new Thread(new Runnable() {
-                int cont = stub.receiveMessage().size();
-
-                @Override
-                public void run() {
-                    try {
-                        for (byte[] encryptedMsg : stub.receiveMessage()) {
-                            String decryptedMsg = encrypter.decrypt(encryptedMsg);
-                            System.out.println(decryptedMsg);
-                            cont++;
-                        }
-                        
-//                        while (true) {
-//                            if (stub.receiveMessage().size() >= cont) {
-//                                byte[] encryptedMsg = stub.receiveMessage().get(stub.receiveMessage().size() - 1);
-//                                String decryptedMsg = encrypter.decrypt(encryptedMsg);
-//                                System.out.println(decryptedMsg);
-//                                cont++;
-//                            }
-//                        }
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            );
-            thread.start();
-
+            clientID = stub.identifyUser(username, keyPair.getPublic());
         } catch (Exception e) {
             System.err.println("Exceção no cliente: " + e.toString());
             e.printStackTrace();
         }
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public int getClientID() {
+        return clientID;
+    }
+
+    public List<String> getOnlineUsers() {
+        try {
+            return stub.getOnlineUsers();
+        } catch (RemoteException ex) {
+            Logger.getLogger(RMIClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+
+    public void initConversation(String nameClient2) {
+        try {
+            pairName = nameClient2;
+            idConversation = stub.initConversation(clientID, nameClient2);
+            getKeySymmetric(idConversation);
+        } catch (RemoteException ex) {
+            Logger.getLogger(RMIClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void getKeySymmetric(int idConversation) throws RemoteException {
+        byte[] encryptedKey = stub.getKeySymmetric(idConversation, clientID);
+        keySymmetric = getSecretKey(encryptedKey, keyPair.getPrivate());
+        encrypter = new AES(keySymmetric);
+    }
+
     private SecretKey getSecretKey(byte[] encryptedKey, PrivateKey privateKey) {
         String decryptedKey = RSA.decrypt(encryptedKey, privateKey);
         // decode the base64 encoded string
         byte[] decodedKey = Base64.getDecoder().decode(decryptedKey);
+        //System.out.println("Chave depois da transmissão: " + Arrays.toString(decodedKey));
         // rebuild key using SecretKeySpec
         SecretKey originalKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, Constants.ALGORITHMs);
         return originalKey;
     }
 
-    public static void main(String args[]) {
-        new RMIClient();
+    public synchronized void sendMessage(String message) {
+        try {
+            //if (!message.equals("fim")) {
+            byte[] encMsg = encrypter.encrypt(message);
+            System.out.println("Mensagem encriptada e enviada: " + Arrays.toString(encMsg));
+            stub.sendMessage(idConversation, new Message(clientID, encMsg));
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
+
+    public synchronized String receiveMessage() {
+        try {
+            List<Integer> convs = stub.hasConversationForMe(clientID);
+            if (!convs.isEmpty()) {
+                for (Integer conv : convs) {
+                    getKeySymmetric(conv);
+                    List<Message> msgs = stub.receiveMessages(conv);
+                    String decryptedMsg = "";
+                    if (!msgs.isEmpty() && msgs.size() > cont) {
+                        for (int i = msgs.size() - 1; i >= cont; i--) {
+                            byte[] encryptedMsg = msgs.get(i).getEncryptedMsg();
+                            System.out.println("Mensagem encriptada recebida: " + Arrays.toString(encryptedMsg));
+                            int idSender = msgs.get(i).getIdSender();
+                            decryptedMsg += stub.getSenderUsername(idSender) + " disse: \n" + encrypter.decrypt(encryptedMsg) + "\n\n";
+                            cont++;
+                            System.out.println("Mensagem Recebida e Decriptada: " + decryptedMsg);
+                            return decryptedMsg;
+                        }
+                    }
+                }
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        } catch (ArrayIndexOutOfBoundsException e) {
+
+        }
+        return null;
+    }
+    
+    public void clearCount(){
+        cont = 0;
+    }
+    
+    public String getPairName(){
+        return pairName;
+    }
+
 }
