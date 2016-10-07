@@ -97,7 +97,7 @@ public class RMIClient {
         try {
             //if (!message.equals("fim")) {
             byte[] encMsg = encrypter.encrypt(message);
-            System.out.println("Conversa: " + idConversation + ", Mensagem encriptada: " + Arrays.toString(encMsg));
+            System.out.println("Conversa: " + idConversation + ", Mensagem encriptada enviada: " + Arrays.toString(encMsg));
             stub.sendMessage(idConversation, new Message(clientID, encMsg));
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -106,25 +106,27 @@ public class RMIClient {
 
     public synchronized String receiveMessage() {
         try {
-            List<Integer> convs = stub.hasConversationForMe(clientID);
-            if (!convs.isEmpty()) {
-                for (Integer conv : convs) {
-                    getKeySymmetric(conv);
-                    List<Message> msgs = stub.receiveMessages(conv);
+            //List<Integer> convs = stub.hasConversationForMe(clientID);
+            //if (!convs.isEmpty()) {
+                //for (Integer conv : convs) {
+                    getKeySymmetric(idConversation); //conv
+                    List<Message> msgs = stub.receiveMessages(idConversation); //conv
                     String decryptedMsg = "";
                     if (!msgs.isEmpty() && msgs.size() > cont) {
-                        for (int i = msgs.size() - 1; i >= cont; i--) {
+                        for (int i = msgs.size() - 1; i >= 0; i--) {
+                        //for (int i = 0; i < msgs.size(); i++) {
                             byte[] encryptedMsg = msgs.get(i).getEncryptedMsg();
+                            System.out.println("Conversa: " + idConversation);
                             System.out.println("Mensagem encriptada recebida: " + Arrays.toString(encryptedMsg));
                             int idSender = msgs.get(i).getIdSender();
                             decryptedMsg += stub.getSenderUsername(idSender) + " disse: \n" + encrypter.decrypt(encryptedMsg) + "\n\n";
                             cont++;
-                            System.out.println("Mensagem Recebida e Decriptada: " + decryptedMsg);
+                            System.out.println("Mensagem Recebida e Decriptada:\n" + decryptedMsg);
                             return decryptedMsg;
                         }
                     }
-                }
-            }
+                //}
+            //}
         } catch (RemoteException e) {
             e.printStackTrace();
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -140,5 +142,5 @@ public class RMIClient {
     public String getPairName(){
         return pairName;
     }
-
+    
 }

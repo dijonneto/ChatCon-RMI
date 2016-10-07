@@ -5,13 +5,12 @@
  */
 package RMIClient;
 
+import Shared.Receive;
 import java.awt.EventQueue;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
-import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 
@@ -206,13 +205,23 @@ public class RMIClientChatUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jButtonSendActionPerformed
 
     private void jListOnlineUsersValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_jListOnlineUsersValueChanged
-        List<String> userSelected = jListOnlineUsers.getSelectedValuesList();
+        //List<String> userSelected = jListOnlineUsers.getSelectedValuesList();
+        String userSelected = jListOnlineUsers.getSelectedValue();
+        Thread threadReceive = null;
         if (userSelected != null) {
-            String user = userSelected.get(0);
+            //String user = userSelected.get(0);
 //            if(!user.equals(c.getPairName())){
 //                c.clearCount();
-                c.initConversation(user);
-//            }
+            jTextAreaReceive.setText("");
+            c.initConversation(userSelected);
+//            if (threadReceive != null) {
+//                threadReceive.interrupt();
+//                c.clearCount();
+//                threadReceive = new Receive(c, jTextAreaReceive);
+//                threadReceive.start();
+//            } else {
+                threadReceive = new Receive(c, jTextAreaReceive);
+                threadReceive.start();
         }
     }//GEN-LAST:event_jListOnlineUsersValueChanged
 
@@ -251,21 +260,20 @@ public class RMIClientChatUI extends javax.swing.JFrame {
                 RMIClientChatUI jFrame = new RMIClientChatUI();
                 jFrame.setVisible(true);
 
-                Thread threadReceive = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        String msgs = "";
-                        while (true) {
-                            String msg = jFrame.getC().receiveMessage();
-                            if (msg != null) {
-                                msgs += msg;
-                                jFrame.getjTextAreaReceive().setText(msgs);
-                            }
-                        }
-                    }
-                });
-                threadReceive.start();
-
+//                Thread threadReceive = new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        String msgs = "";
+//                        while (true) {
+//                            String msg = jFrame.getC().receiveMessage();
+//                            if (msg != null) {
+//                                msgs += msg;
+//                                jFrame.getjTextAreaReceive().setText(msgs);
+//                            }
+//                        }
+//                    }
+//                });
+//                threadReceive.start();
                 Thread threadOnline = new Thread(new Runnable() {
                     @Override
                     public void run() {
