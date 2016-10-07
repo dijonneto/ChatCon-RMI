@@ -49,11 +49,11 @@ public class ChatImpl extends UnicastRemoteObject implements IChat {
     public int identifyUser(String name, PublicKey publicKey) throws RemoteException {
         int id = getIdClient(name);
         if (id != -1) {
-            System.out.println("Usuário identificado: " + name);
+            System.out.println("Usuário identificado: " + name + ", ID: " + id);
             return id;
         }
 
-        System.out.println("Usuário adicionado: " + name);
+        System.out.println("Usuário adicionado: " + name + ", ID: " + users.size());
         User u = new User();
         u.setUsername(name);
         u.setPublicKey(publicKey);
@@ -94,7 +94,7 @@ public class ChatImpl extends UnicastRemoteObject implements IChat {
             }
         }
 
-        System.out.println("Conversa adicionada: IdC1: " + idClient1 + ", IdC2: " + idClient2 + ", Total: " + conversations.size() + 1);
+        System.out.println("Conversa adicionada: IdConv: " + conversations.size() + " IdC1: " + idClient1 + ", IdC2: " + idClient2);
 
         conversations.add(new Conversation(idClient1, idClient2, generateKeySymmetric()));
         return conversations.size() - 1;
@@ -161,9 +161,9 @@ public class ChatImpl extends UnicastRemoteObject implements IChat {
     public List<Message> receiveMessages(int idConversation) throws RemoteException {
         return conversations.get(idConversation).getMessages();
     }
-    
+
     @Override
-    public String getSenderUsername(int idSender) throws RemoteException{
+    public String getSenderUsername(int idSender) throws RemoteException {
         return users.get(idSender).getUsername();
     }
 

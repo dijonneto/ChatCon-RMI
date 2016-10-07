@@ -97,7 +97,7 @@ public class RMIClient {
         try {
             //if (!message.equals("fim")) {
             byte[] encMsg = encrypter.encrypt(message);
-            System.out.println("Mensagem encriptada e enviada: " + Arrays.toString(encMsg));
+            System.out.println("Conversa: " + idConversation + ", Mensagem encriptada: " + Arrays.toString(encMsg));
             stub.sendMessage(idConversation, new Message(clientID, encMsg));
         } catch (RemoteException e) {
             e.printStackTrace();
