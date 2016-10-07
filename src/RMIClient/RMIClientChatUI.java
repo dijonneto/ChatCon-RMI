@@ -23,7 +23,7 @@ public class RMIClientChatUI extends javax.swing.JFrame {
 
     private RMIClient c;
     DefaultListModel<String> model;
-    List<Thread> threads;
+    List<Receive> threads;
 
     /**
      * Creates new form RMIClientChat
@@ -41,9 +41,9 @@ public class RMIClientChatUI extends javax.swing.JFrame {
 
         jLabelUser.setText("Usuário: " + c.getUsername());
         jLabelId.setText("Id: " + c.getClientID());
-        
+
         threads = new ArrayList<>();
-        
+
         this.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
@@ -223,14 +223,21 @@ public class RMIClientChatUI extends javax.swing.JFrame {
             //String user = userSelected.get(0);
 //            if(!user.equals(c.getPairName())){
 //                c.clearCount();
-            jTextAreaReceive.setText("");
-            c.initConversation(userSelected);
-            Receive threadReceive = new Receive(userSelected, c, jTextAreaReceive);
-            for (Thread thread : threads) {
-                thread.stop();
+            synchronized (this) {
+                boolean create = false;
+                jTextAreaReceive.setText("");
+                c.initConversation(userSelected);
+                for (Receive thread : threads) {
+//                    if (thread.getUsername().equals(userSelected)) {
+//                        thread.start();
+//                    } else {
+//                        thread.suspend();
+//                    }
+                }
+                Receive threadReceive = new Receive(userSelected, c, jTextAreaReceive);
+                threadReceive.start();
+                threads.add(threadReceive);
             }
-            threadReceive.start();
-            threads.add(threadReceive);
 
 //            String msgs = "";
 //            c.clearCount();
@@ -252,13 +259,12 @@ public class RMIClientChatUI extends javax.swing.JFrame {
 //                    }
 //                }
 //            });
-
         }
     }//GEN-LAST:event_jListOnlineUsersValueChanged
 
     /**
-         * @param args the command line arguments
-         */
+     * @param args the command line arguments
+     */
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">

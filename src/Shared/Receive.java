@@ -19,22 +19,29 @@ public class Receive extends Thread {
     private final String username;
     private final RMIClient c;
     private final JTextArea jTextAreaReceive;
-    private String msgs = "";
+    private String msgs;
 
     public Receive(String username, RMIClient c, JTextArea jTextAreaReceive) {
         this.username = username;
         this.c = c;
         this.jTextAreaReceive = jTextAreaReceive;
+        msgs = "";
+        c.clearCount();
     }
-    
+
     @Override
     public synchronized void run(){
-        //c.clearCount();
         while (true) {
+
             String msg = c.receiveMessage();
+
             if (msg != null) {
-                msgs += msg;
-                jTextAreaReceive.setText(msgs);
+                System.out.println("-----------------------");
+                System.out.println("Thread: " + Thread.currentThread().getName() + " | Message: " + msg);
+                //msgs += msg;
+                //System.out.println("Thread: " + Thread.currentThread().getName() + " | MESSAGES: " + msgs);
+                System.out.println("-----------------------");
+                jTextAreaReceive.append(msg);
             }
 
             try {
