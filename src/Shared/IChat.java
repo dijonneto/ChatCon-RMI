@@ -32,6 +32,8 @@ public interface IChat extends Remote {
     
     public String getSenderUsername(int idSender) throws RemoteException;
     
+    public void logoutUser(int id) throws RemoteException;
+    
     // ---------------
     // Alterar abaixo:
     // ---------------
@@ -40,8 +42,6 @@ public interface IChat extends Remote {
     
     public byte[] registerUser(User u, PublicKey key) throws RemoteException;
     
-    public boolean loginUser(String username, String password) throws RemoteException;
-    
-    public boolean logoutUser(int id) throws RemoteException;
+    public boolean loginUser(String username, String password) throws RemoteException; 
 
 }

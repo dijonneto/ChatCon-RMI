@@ -7,6 +7,7 @@ package RMIClient;
 
 import Shared.Receive;
 import java.awt.EventQueue;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,6 +23,7 @@ public class RMIClientChatUI extends javax.swing.JFrame {
 
     private RMIClient c;
     DefaultListModel<String> model;
+    List<Thread> threads;
 
     /**
      * Creates new form RMIClientChat
@@ -39,6 +41,15 @@ public class RMIClientChatUI extends javax.swing.JFrame {
 
         jLabelUser.setText("Usuário: " + c.getUsername());
         jLabelId.setText("Id: " + c.getClientID());
+        
+        threads = new ArrayList<>();
+        
+        this.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                c.logoutUser();
+            }
+        });
     }
 
     /**
@@ -207,27 +218,47 @@ public class RMIClientChatUI extends javax.swing.JFrame {
     private void jListOnlineUsersValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_jListOnlineUsersValueChanged
         //List<String> userSelected = jListOnlineUsers.getSelectedValuesList();
         String userSelected = jListOnlineUsers.getSelectedValue();
-        Thread threadReceive = null;
+        //Thread threadReceive = null;
         if (userSelected != null) {
             //String user = userSelected.get(0);
 //            if(!user.equals(c.getPairName())){
 //                c.clearCount();
             jTextAreaReceive.setText("");
             c.initConversation(userSelected);
-//            if (threadReceive != null) {
-//                threadReceive.interrupt();
-//                c.clearCount();
-//                threadReceive = new Receive(c, jTextAreaReceive);
-//                threadReceive.start();
-//            } else {
-                threadReceive = new Receive(c, jTextAreaReceive);
-                threadReceive.start();
+            Receive threadReceive = new Receive(userSelected, c, jTextAreaReceive);
+            for (Thread thread : threads) {
+                thread.stop();
+            }
+            threadReceive.start();
+            threads.add(threadReceive);
+
+//            String msgs = "";
+//            c.clearCount();
+//            Thread t = new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    while (true) {
+//                        String msg = c.receiveMessage();
+//                        if (msg != null) {
+//                            msgs += msg;
+//                            jTextAreaReceive.setText(msgs);
+//                        }
+//
+//                        try {
+//                            Thread.sleep(500);
+//                        } catch (InterruptedException ex) {
+//                            Logger.getLogger(Receive.class.getName()).log(Level.SEVERE, null, ex);
+//                        }
+//                    }
+//                }
+//            });
+
         }
     }//GEN-LAST:event_jListOnlineUsersValueChanged
 
     /**
-     * @param args the command line arguments
-     */
+         * @param args the command line arguments
+         */
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">

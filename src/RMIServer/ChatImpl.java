@@ -166,6 +166,11 @@ public class ChatImpl extends UnicastRemoteObject implements IChat {
     public String getSenderUsername(int idSender) throws RemoteException {
         return users.get(idSender).getUsername();
     }
+    
+    @Override
+    public void logoutUser(int id) throws RemoteException {
+        users.get(id).setOnline(false);
+    }
 
     // ---------------------------------------------------------------- //
     @Override
@@ -184,9 +189,5 @@ public class ChatImpl extends UnicastRemoteObject implements IChat {
 
         return false;
     }
-
-    @Override
-    public boolean logoutUser(int id) throws RemoteException {
-        return false;
-    }
+    
 }

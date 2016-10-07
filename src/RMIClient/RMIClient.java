@@ -120,6 +120,7 @@ public class RMIClient {
                             System.out.println("Mensagem encriptada recebida: " + Arrays.toString(encryptedMsg));
                             int idSender = msgs.get(i).getIdSender();
                             decryptedMsg += stub.getSenderUsername(idSender) + " disse: \n" + encrypter.decrypt(encryptedMsg) + "\n\n";
+                            System.out.println("Contador de mensagens: " + cont);
                             cont++;
                             System.out.println("Mensagem Recebida e Decriptada:\n" + decryptedMsg);
                             return decryptedMsg;
@@ -142,5 +143,13 @@ public class RMIClient {
     public String getPairName(){
         return pairName;
     }
+    
+    public void logoutUser(){
+        try {
+            stub.logoutUser(clientID);
+        } catch (RemoteException ex) {
+            Logger.getLogger(RMIClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }           
     
 }
